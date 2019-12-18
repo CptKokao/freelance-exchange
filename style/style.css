@@ -73,7 +73,7 @@ main {
     cursor: pointer;
 }
 
-#orders .taken {
+#orders .new {
     background: #28a745;
     color: #fff;
 }
