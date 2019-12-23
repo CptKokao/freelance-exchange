@@ -8,11 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const blockChoice = document.querySelector('#block-choice');
     const btnExit = document.querySelector('#btn-exit');
     const formCustomer= document.querySelector('#form-customer');
-    const orders = [];
+    const orders = JSON.parse(localStorage.getItem('localOrders')) || [];
     const tableOrder = document.querySelector('#orders');
+    let modal = document.querySelector('.modal');
     const modalRead = document.querySelector('#order_read');
     const moadlActive= document.querySelector('#order_active');
-    
 
     // добавляет заказы в таблицу
     let renderOrder = () => {
@@ -23,12 +23,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${index + 1}</td>
                 <td>${el.title}</td>
                 <td class="${el.currency}"></td>
-                <td>${el.deadline}</td>
+                <td>${deadline(el.deadline)}</td>
             </tr>`
         });
     };
 
-    // форма
+    function deadline(date) {
+        const deadDate = new Date(date);
+        console.log(deadDate.parse());
+        const nowDate = Date.now();
+        const last = deadDate - nowDate;
+        console.log(last);
+    }
+
+    function declOfNum(number, titles) {  
+        cases = [2, 0, 1, 1, 1, 2];  
+        return titles [(number % 100 > 4 && number % 100 < 20)
+            ? 2 : cases[(number % 10 < 5) ? number % 10 : 5] ];  
+    }
+
+    const toStorage = () => {
+        localStorage.setItem('localOrders', JSON.stringify(orders));
+    };
+
+    // форма, добавить все элементы из формы в объект orders
     formCustomer.addEventListener('submit', (e) => {
         e.preventDefault();
         const obj = {};
@@ -43,16 +61,52 @@ document.addEventListener('DOMContentLoaded', () => {
         obj.active = false;
 
         orders.push(obj);
+        toStorage();
         formCustomer.reset();
-        // console.log(orders) 
     });
         
-    const getOrder= document.querySelector('.get-order');
-    const modal = document.querySelector('.modal');
+    // обработчик для модального окна
+    const onClickInModal = (e) => {
+        const target = e.target;
+        console.log(target)
+        const closeBtn = target.closest('.close');
+        const getOrder= document.querySelector('.get-order');
+        const capitulation = document.querySelector('#capitulation');
+        const ready = document.querySelector('#ready');
 
+        const basicAction = () => {
+            modal.style.display = 'none';
+            toStorage();
+            renderOrder();
+        }
+
+        // если клик по кнопки закрыть или по overflow то закрыть окно
+        if ((closeBtn) || (target === modal))  {
+            basicAction();
+        }
+
+        // если клик на кнопку ПОЛУЧИТЬ
+        if (target === getOrder) {
+            orders[modal.numberOrder].active = true;
+            basicAction();
+        }
+
+        // если клик на кнопку ВЫПОЛНИЛ 
+        if (target === ready) {
+            orders.splice(modal.numberOrder, 1);
+            basicAction();
+        }
+
+        // если клик на кнопку ОТМЕНИТЬ 
+        if (target === capitulation) {
+            orders[modal.numberOrder].active = false;
+            basicAction();
+        }
+    }  
+    
     // открытие модального окна
     let openModal = (numberOrder) => {
-
+        
         // выбираем из [] нужный объект по номеру массива, который мы передаем через numberOrder
         const currentOrder = orders[numberOrder];
 
@@ -60,10 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let {title, firstName, email, phone, description, amount, currency, deadline, active} = currentOrder;
 
         // выбираем какое модальное окно показать
-        const modal = active ? moadlActive : modalRead;
-        console.log(modal);
-        console.log(orders);
-
+        modal = active ? moadlActive : modalRead;
+        console.log(modal)
         // получаем элементы модального окна
         const firstNameBlock= modal.querySelector('.firstName'); 
         const titleBlock= modal.querySelector('.modal-title'); 
@@ -73,50 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const currencyBlock= modal.querySelector('.currency_img'); 
         const countBlock= modal.querySelector('.count'); 
         const phoneBlock= modal.querySelector('.phone'); 
-        const capitulation= modal.querySelector('#capitulation'); 
+
 
         // добавляем значения в верстку
         titleBlock.textContent = title;
         firstNameBlock.textContent = firstName;
         emailBlock.innerText = email;
+        emailBlock.href = 'mailto:' + email;
         descriptionBlock.textContent = description;
         deadlineBlock.textContent = deadline;
         currencyBlock.classList.add(currency);
         countBlock.textContent = amount;
+        // добавляем id
+        modal.numberOrder = numberOrder; 
         if (modal === modalRead) {
             phoneBlock.innerText = phone;
+            phoneBlock.href = 'tel:' + phone;
         }
 
         // открываем модальное окно
-        modal.style.display = 'block';
-
-        if (modal === moadlActive) {
-            // обработчик на кнопку getOrder
-            capitulation.addEventListener('click', (e) => {
-                modal.style.display = "none";
-                orders.splice(orders.indexOf(numberOrder), 1);
-                renderOrder();
-            });
-        }
-
-        
-        // обработчик на кнопку getOrder
-        getOrder.addEventListener('click', (e) => {
-            modal.style.display = "none";
-            currentOrder.active = true;
-            renderOrder();
-        });
-
-        // обработчик для закрытия модального окна
-        modal.addEventListener('click', (e) => {
-            const target = e.target;
-            const closeBtn = target.closest('.close');
-
-            // если клик по кнопки закрыть или по overflow то закрыть окно
-            if((closeBtn) || (target === modal))  {
-                modal.style.display = "none";
-            }
-        });
+        modal.style.display = 'flex';
+        modal.addEventListener('click', onClickInModal)
     };
 
     // определяем target на всей таблице
@@ -134,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     freelancer.addEventListener('click', () => {
         blockFreelancer.style.display = 'block';
-        renderOrder();
+        renderOrder(orders);
         blockChoice.style.display = 'none';
         btnExit.style.display = 'block';
     });
