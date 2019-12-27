@@ -29,16 +29,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function deadline(date) {
+        // получаем дату дедлайна
         const deadDate = new Date(date);
-        console.log(deadDate.parse());
-        const nowDate = Date.now();
-        const last = deadDate - nowDate;
-        console.log(last);
+        // получаем текущую дату
+        const today = Date.now();
+        console.log((deadDate - today));
+        // вычитаем из deadDate - today = оставшиеся время в мс и приводим это значения к дням
+        const calculatedDate = (deadDate - today) / 1000 / 60 / 60;
+
+        // выводим дни
+        if ((calculatedDate / 24) > 2) {
+            return declOfNum(Math.floor(calculatedDate), ['день', 'дня', 'дней']);
+        }
+        return declOfNum(Math.floor(calculatedDate), ['час', 'часа', 'часов']);
+
     }
 
+    function stopDate () {
+        // преобразуем формат даты в нужный формат и забираем первые 9 символов
+        const today = new Date().toISOString().slice(0,10);
+        const deadlineBlock= document.querySelector('#deadline'); 
+        // добавляем значение для атрибута min
+        deadlineBlock.min = today;
+    }
+
+    // Склонение числительных
     function declOfNum(number, titles) {  
-        cases = [2, 0, 1, 1, 1, 2];  
-        return titles [(number % 100 > 4 && number % 100 < 20)
+        const cases = [2, 0, 1, 1, 1, 2];  
+        return number + ' ' + titles [(number % 100 > 4 && number % 100 < 20)
             ? 2 : cases[(number % 10 < 5) ? number % 10 : 5] ];  
     }
 
@@ -159,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         blockCustomer.style.display = 'block';
         blockChoice.style.display = 'none';
         btnExit.style.display = 'block';
+        stopDate();
     });
 
     freelancer.addEventListener('click', () => {
